@@ -4,5 +4,8 @@
   "description": "Node.js native websocket addon",
   "license": "Apache-2.0",
   "repository": "bmwcarit/wscpp",
-  "main": "main.js"
+  "main": "main.js",
+  "dependencies": {
+    "bindings": "1.2.1"
+  }
 }
