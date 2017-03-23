@@ -11,13 +11,16 @@
   },
   "devDependencies": {
     "napa": "2.3.0",
-    "nan" : "2.5.1"
+    "nan" : "2.5.1",
+    "gulp": "3.9.1",
+    "gulp-clang-format": "1.0.23"
   },
   "napa": {
     "concurrentqueue": "cameron314/concurrentqueue#c54341183f8674c575913a65ef7c651ecce47243",
     "websocketpp": "zaphoyd/websocketpp#0.7.0"
   },
   "scripts": {
-    "install": "napa && node-gyp rebuild"
+    "install": "napa && node-gyp rebuild",
+    "format": "gulp format"
   }
 }
