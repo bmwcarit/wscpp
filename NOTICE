@@ -15,3 +15,16 @@ specific language governing permissions and limitations
 under the License.
 
 This project has dependencies to:
+--- Dynamically linked libraries by node native modules ------------------------
+
+libboost_system, libboost_thread under Boost Software License, Version 1.0
+OpenSSL under OpenSSL License
+libuv under MIT License
+Node.js under MIT License
+v8 under BSD 3-clause License
+
+--- Header only libraries used by node native modules --------------------------
+Boost under Boost Software License, Version 1.0
+WebSocket++ under BSD 3-clause License
+moodycamel::ConcurrentQueue under Boost Software License, Version 1.0
+nan "Native Abstractions for Node.js" under MIT License
