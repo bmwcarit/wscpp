@@ -18,6 +18,11 @@
 # #L%
 ###
 
+set -x -e
+
+export CI=true
+
 cd /data/src
 npm install
 npm run gen-test-certs
+npm test

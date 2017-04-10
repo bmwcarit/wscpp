@@ -13,7 +13,12 @@
     "napa": "2.3.0",
     "nan" : "2.5.1",
     "gulp": "3.9.1",
-    "gulp-clang-format": "1.0.23"
+    "gulp-clang-format": "1.0.23",
+    "@sane/promisify-listen": "1.0.1",
+    "ava": "0.18.2",
+    "cartesian-product": "2.1.2",
+    "get-port": "3.0.0",
+    "ws": "2.2.2"
   },
   "napa": {
     "concurrentqueue": "cameron314/concurrentqueue#c54341183f8674c575913a65ef7c651ecce47243",
@@ -22,6 +27,7 @@
   "scripts": {
     "install": "napa && node-gyp rebuild",
     "format": "gulp format",
-    "gen-test-certs": "gulp gen-test-certs"
+    "gen-test-certs": "gulp gen-test-certs",
+    "test" : "ava -s"
   }
 }
