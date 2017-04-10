@@ -21,9 +21,20 @@
 
 const gulp = require('gulp');
 const format = require('gulp-clang-format');
+const exec = require('child_process').exec;
 
+// ----- format source code -----
 var sources = ['./*.js', './test/*.js', './src/*.cpp', './src/*.h'];
 
 gulp.task('format', function() {
   gulp.src(sources, {base: '.'}).pipe(format.format('file')).pipe(gulp.dest('.'));
 });
+
+// ----- generate test certificates -----
+gulp.task('gen-test-certs', function(cb) {
+  exec('./test/certificates/gen-certs.sh --suffix 1', function(err, stdout, stderr) {
+    console.log(stdout);
+    console.log(stderr);
+    cb(err);
+  });
+})

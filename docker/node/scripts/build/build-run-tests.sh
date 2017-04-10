@@ -20,3 +20,4 @@
 
 cd /data/src
 npm install
+npm run gen-test-certs

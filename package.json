@@ -21,6 +21,7 @@
   },
   "scripts": {
     "install": "napa && node-gyp rebuild",
-    "format": "gulp format"
+    "format": "gulp format",
+    "gen-test-certs": "gulp gen-test-certs"
   }
 }
