@@ -18,7 +18,8 @@
     "ava": "0.18.2",
     "cartesian-product": "2.1.2",
     "get-port": "3.0.0",
-    "ws": "2.2.2"
+    "ws": "2.2.2",
+    "node-gyp": "3.6.0"
   },
   "napa": {
     "concurrentqueue": "cameron314/concurrentqueue#c54341183f8674c575913a65ef7c651ecce47243",
@@ -28,6 +29,7 @@
     "install": "napa && node-gyp rebuild",
     "format": "gulp format",
     "gen-test-certs": "gulp gen-test-certs",
-    "test" : "ava -s"
+    "test" : "ava -s",
+    "rebuild-tests": "node-gyp rebuild --directory test"
   }
 }

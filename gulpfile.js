@@ -24,7 +24,7 @@ const format = require('gulp-clang-format');
 const exec = require('child_process').exec;
 
 // ----- format source code -----
-var sources = ['./*.js', './test/*.js', './src/*.cpp', './src/*.h'];
+var sources = ['./*.js', './test/js/*.js', './test/cpp/*.cpp', './src/*.cpp', './src/*.h'];
 
 gulp.task('format', function() {
   gulp.src(sources, {base: '.'}).pipe(format.format('file')).pipe(gulp.dest('.'));

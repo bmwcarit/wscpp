@@ -24,5 +24,6 @@ export CI=true
 
 cd /data/src
 npm install
+npm run rebuild-tests
 npm run gen-test-certs
 npm test
