@@ -32,7 +32,7 @@ class WebSocket {
       if (options === null || typeof options !== 'object') {
         throw 'options must be an object';
       }
-      if (options.ca !== 'undefined' && !(options.ca instanceof Array)) {
+      if (typeof options.ca !== 'undefined' && !(options.ca instanceof Array)) {
         options.ca = [options.ca];
       }
     }
