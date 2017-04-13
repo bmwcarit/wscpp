@@ -17,9 +17,9 @@
  * #L%
  */
 
-import test from 'ava';
-
 'use strict';
+
+import test from 'ava';
 
 const testRootDir = require('path').resolve(__dirname, '..');
 const marshallingTest =
@@ -28,7 +28,7 @@ const marshallingTest =
 function runScalarTest(testCase) {
   const testName = 'scalar: ' + typeof testCase.value + ' "' + testCase.value + '"';
   test(testName, t => {
-    const returnValue = testCase.func({value: testCase.value});
+    const returnValue = marshallingTest[testCase.func]({value: testCase.value});
     t.deepEqual(returnValue, testCase.value);
   });
 }
@@ -37,16 +37,16 @@ function runVectorTest(testCase) {
   const testName = 'vector: ' + typeof testCase.value + ' "' + testCase.value + '"';
   const expectedValue = Array(10).fill(testCase.value);
   test(testName, t => {
-    const returnValue = testCase.func({value: testCase.value});
-    t.deepEqual(returnValue, testCase.value);
+    const returnValue = marshallingTest[testCase.func + 'Vector']({value: expectedValue});
+    t.deepEqual(returnValue, expectedValue);
   });
 }
 
 const testCases = [
-  {value: 'hello world', func: marshallingTest.getString},
-  {value: 12345, func: marshallingTest.getInteger},
-  {value: 987.654, func: marshallingTest.getDouble},
-  {value: true, func: marshallingTest.getBool},
+  {value: 'hello world', func: 'getString'},
+  {value: 12345, func: 'getInteger'},
+  {value: 987.654, func: 'getDouble'},
+  {value: true, func: 'getBool'},
 ];
 
 testCases.forEach(testCase => runScalarTest(testCase));
