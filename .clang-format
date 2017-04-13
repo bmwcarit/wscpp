@@ -1,0 +1,10 @@
+Language: Cpp
+BasedOnStyle: LLVM
+ColumnLimit: 100
+PointerAlignment: Left
+BreakBeforeBraces: Linux
+AlwaysBreakTemplateDeclarations: true
+---
+Language: JavaScript
+BasedOnStyle: Google
+ColumnLimit: 100
