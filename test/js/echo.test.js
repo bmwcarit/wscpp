@@ -25,20 +25,18 @@ const WebSocket = require('../..');
 
 const http = require('http');
 const https = require('https');
-
 const fs = require('fs');
-const crypto = require('crypto');
 
 const getPort = require('get-port');
 const WebSocketServer = require('ws').Server;
 const cartesianProduct = require('cartesian-product');
-import { promisifyListen } from '@sane/promisify-listen';
+import {promisifyListen} from '@sane/promisify-listen';
 
 function initWebsocket(websocketServerUrl, t, options) {
   const client = new WebSocket(websocketServerUrl, options);
 
   client.onerror = () => {
-    t.fail("onerror callback invoked");
+    t.fail('onerror callback invoked');
   };
 
   client.onclose = () => {
@@ -59,7 +57,7 @@ function initNonTlsCommunication(t) {
   return getPort().then((port) => {
     const httpServer = http.createServer();
 
-    return promisifyListen(httpServer).listenAsync(port).then( () => {
+    return promisifyListen(httpServer).listenAsync(port).then(() => {
       const setup = {};
 
       setup.server = new WebSocketServer({server: httpServer});
@@ -83,7 +81,7 @@ function initTlsCommunication(t) {
       ca: fs.readFileSync('test/certificates/generated/ca1.cert.pem')
     };
     const httpsServer = https.createServer(serverOptions);
-    return promisifyListen(httpsServer).listenAsync(port).then( () => {
+    return promisifyListen(httpsServer).listenAsync(port).then(() => {
       const setup = {};
       setup.server = new WebSocketServer({server: httpsServer});
       initEchoServer(setup.server);
