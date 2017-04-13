@@ -24,17 +24,15 @@ function noop() {}
 var NativeWebSocket = require('bindings')('wscpp-client.node');
 
 class WebSocket {
-  constructor(serverUri, options) {
+  constructor(serverUri, options = {}) {
     if (typeof serverUri !== 'string') {
-      throw 'serverUri must be a string';
+      throw new Error('serverUri must be a string');
     }
-    if (typeof options !== 'undefined') {
-      if (options === null || typeof options !== 'object') {
-        throw 'options must be an object';
-      }
-      if (typeof options.ca !== 'undefined' && !(options.ca instanceof Array)) {
-        options.ca = [options.ca];
-      }
+    if (options === null || typeof options !== 'object') {
+      throw new Error('options must be an object');
+    }
+    if (options.ca !== undefined && !(options.ca instanceof Array)) {
+      options.ca = [options.ca];
     }
     this.onOpenCallbackInternal = noop;
     this.onMessageCallbackInternal = noop;
@@ -42,23 +40,23 @@ class WebSocket {
     this.onErrorCallbackInternal = noop;
 
     this.readyState = WebSocket.CONNECTING;
-    this.nativeHandle = new NativeWebSocket.WebsocketClientWorker(serverUri, this, options || {});
+    this.nativeHandle = new NativeWebSocket.WebsocketClientWorker(serverUri, this, options);
   }
 
-  set onopen(f) {
-    this.onOpenCallbackInternal = f ? f : noop;
+  set onopen(f = noop) {
+    this.onOpenCallbackInternal = f;
   }
 
-  set onmessage(f) {
-    this.onMessageCallbackInternal = f ? f : noop;
+  set onmessage(f = noop) {
+    this.onMessageCallbackInternal = f;
   }
 
-  set onclose(f) {
-    this.onCloseCallbackInternal = f ? f : noop;
+  set onclose(f = noop) {
+    this.onCloseCallbackInternal = f;
   }
 
-  set onerror(f) {
-    this.onErrorCallbackInternal = f ? f : noop;
+  set onerror(f = noop) {
+    this.onErrorCallbackInternal = f;
   }
 
   /**
@@ -77,7 +75,7 @@ class WebSocket {
   }
 
   onMessageCallback(msg) {
-    this.onMessageCallbackInternal({'data': msg});
+    this.onMessageCallbackInternal({data: msg});
   }
 
   onCloseCallback() {
