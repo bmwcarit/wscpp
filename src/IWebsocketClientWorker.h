@@ -21,6 +21,7 @@
 #define WSCPP_IWEBSOCKETCLIENTWORKER_H
 
 #include <cstdint>
+#include <string>
 
 namespace wscpp
 {
@@ -50,8 +51,10 @@ public:
 
   /**
    * @brief closes the underlying websocket connection
+   * @param code close code to be sent
+   * @param reason close reason to be sent
    */
-  virtual void close() = 0;
+  virtual void close(std::uint16_t code, const std::string& reason) = 0;
 };
 
 } // namespace wscpp

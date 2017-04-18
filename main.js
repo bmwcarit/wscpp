@@ -59,12 +59,13 @@ class WebSocket {
     this.onErrorCallbackInternal = f;
   }
 
-  /**
-   * @todo in order to fully comply with "ws" API, we would need to support
-   * the "code" and "data" arguments
-   */
-  close(/*code, data*/) {
-    this.nativeHandle.close();
+
+  close(code = 1000, reason = '') {
+    if (typeof code !== 'number') {
+      throw new Error('close must be called with a valid `close` code');
+    }
+
+    this.nativeHandle.close(code, reason);
     this.nativeHandle = null;
     this.readyState = WebSocket.CLOSING;
   }

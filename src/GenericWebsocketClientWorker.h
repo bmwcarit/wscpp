@@ -107,11 +107,11 @@ public:
     endpoint.send(connectionHandle, data, size, websocketpp::frame::opcode::binary);
   }
 
-  void close() override
+  void close(std::uint16_t code, const std::string& reason) override
   {
     endpoint.stop_perpetual();
     websocketpp::lib::error_code ec;
-    endpoint.close(connectionHandle, websocketpp::close::status::going_away, "", ec);
+    endpoint.close(connectionHandle, code, reason, ec);
     if (ec) {
       const std::string errorMessage = "could not close connection: " + ec.message();
       Nan::ThrowError(errorMessage.c_str());
