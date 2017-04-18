@@ -20,9 +20,12 @@
 #ifndef WSCPP_GENERICWEBSOCKETCLIENTWORKER_H
 #define WSCPP_GENERICWEBSOCKETCLIENTWORKER_H
 
+#include <cstdint>
 #include <memory>
+#include <string>
 #include <tuple> // for std::ignore
 
+#include <boost/variant.hpp>
 #include <nan.h>
 #include <uv.h>
 
@@ -36,6 +39,18 @@
 namespace wscpp
 {
 
+namespace events
+{
+struct Open {
+};
+struct Close {
+  std::uint16_t code;
+  std::string reason;
+};
+struct Error {
+};
+} // namespace events
+
 /**
  * This class is modeled after NaN::AsyncWorker and
  * NaN::AsyncProgressWorkerBase.
@@ -47,9 +62,39 @@ template <typename Config>
 class GenericWebsocketClientWorker : public IWebsocketClientWorker
 {
 private:
-  enum class EventCallbackType { None, Open, Error, Close };
+  using Event = boost::variant<events::Open, events::Close, events::Error>;
   using Endpoint = websocketpp::client<Config>;
   using MessagePtr = typename Config::message_type::ptr;
+
+  class EventVisitor : public boost::static_visitor<>
+  {
+  public:
+    EventVisitor(GenericWebsocketClientWorker* worker, v8::Local<v8::Object> context)
+        : worker(worker), context(context)
+    {
+    }
+
+    void operator()(const events::Open& e) const
+    {
+      worker->parameters->onOpenCallback->Call(context, 0, nullptr);
+    }
+
+    void operator()(const events::Close& e) const
+    {
+      v8::Local<v8::Value> argv[] = {Nan::New<v8::Int32>(e.code),
+                                     Nan::New<v8::String>(e.reason).ToLocalChecked()};
+      worker->parameters->onCloseCallback->Call(context, 2, argv);
+    }
+
+    void operator()(const events::Error& e) const
+    {
+      worker->parameters->onErrorCallback->Call(context, 0, nullptr);
+    }
+
+  private:
+    GenericWebsocketClientWorker* worker;
+    v8::Local<v8::Object> context;
+  };
 
 protected:
   using ConnectionHandle = websocketpp::connection_hdl;
@@ -167,7 +212,7 @@ public:
   void handReceivedMessagesToNode()
   {
     Nan::HandleScope scope;
-    auto context = Nan::New(parameters->thisContext);
+    v8::Local<v8::Object> context = Nan::New(parameters->thisContext);
     MessagePtr msg;
     while (receivedMessageQueue.try_dequeue(msg)) {
       const websocketpp::frame::opcode::value opcode = msg->get_opcode();
@@ -195,22 +240,11 @@ public:
   void handReceivedEventsToNode()
   {
     Nan::HandleScope scope;
-    auto context = Nan::New(parameters->thisContext);
-    EventCallbackType event;
+    v8::Local<v8::Object> context = Nan::New(parameters->thisContext);
+    Event event;
+    EventVisitor visitor(this, context);
     while (eventQueue.try_dequeue(event)) {
-      switch (event) {
-      case EventCallbackType::Open:
-        parameters->onOpenCallback->Call(context, 0, nullptr);
-        break;
-      case EventCallbackType::Close:
-        parameters->onCloseCallback->Call(context, 0, nullptr);
-        break;
-      case EventCallbackType::Error:
-        parameters->onErrorCallback->Call(context, 0, nullptr);
-        break;
-      default:
-        break;
-      }
+      boost::apply_visitor(visitor, event);
     }
   }
 
@@ -255,20 +289,21 @@ private:
   void connectionOpened(ConnectionHandle connectionHandle)
   {
     this->connectionHandle = std::move(connectionHandle);
-    signalEventOccurred(EventCallbackType::Open);
+    signalEventOccurred(events::Open());
   }
 
   void connectionClosed(ConnectionHandle connectionHandle)
   {
-    std::ignore = connectionHandle;
-    signalEventOccurred(EventCallbackType::Close);
+    auto connection = endpoint.get_con_from_hdl(connectionHandle);
+    signalEventOccurred(
+        events::Close{connection->get_remote_close_code(), connection->get_remote_close_reason()});
   }
 
   void connectionFailed(ConnectionHandle connectionHandle)
   {
     std::ignore = connectionHandle;
     // TODO add error description to event
-    signalEventOccurred(EventCallbackType::Error);
+    signalEventOccurred(events::Error());
   }
 
   /**
@@ -279,9 +314,9 @@ private:
   /**
    * @brief notify node to call `eventOccuredCallback`
    */
-  void signalEventOccurred(EventCallbackType event)
+  void signalEventOccurred(Event event)
   {
-    eventQueue.enqueue(event);
+    eventQueue.enqueue(std::move(event));
     uv_async_send(eventAsyncHandle);
   }
 
@@ -292,7 +327,7 @@ private:
   ConnectionHandle connectionHandle;
 
   moodycamel::ConcurrentQueue<MessagePtr> receivedMessageQueue;
-  moodycamel::ConcurrentQueue<EventCallbackType> eventQueue;
+  moodycamel::ConcurrentQueue<Event> eventQueue;
 };
 
 } // namespace wscpp

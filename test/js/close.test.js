@@ -23,7 +23,7 @@ import test from 'ava';
 const Setup = require('./setup.helper.js');
 
 
-test.cb('close code and reason are sent to server', t => {
+test.cb('close code and reason are sent from client to server', t => {
   Setup.initNonTlsCommunication().then((setup) => {
 
     const expectedCode = 4000;
@@ -33,12 +33,35 @@ test.cb('close code and reason are sent to server', t => {
       ws.on('close', (code, reason) => {
         t.is(code, expectedCode);
         t.is(reason, expectedReason);
-        t.end();
       });
     });
 
     setup.client.onopen = () => {
       setup.client.close(expectedCode, expectedReason);
+    };
+
+    setup.client.onclose = (e) => {
+      t.is(e.code, expectedCode);
+      t.is(e.reason, expectedReason);
+      t.end();
+    };
+  });
+});
+
+test.cb('close code and reason are sent from server to client', t => {
+  Setup.initNonTlsCommunication().then((setup) => {
+
+    const expectedCode = 4000;
+    const expectedReason = 'test-reason';
+
+    setup.server.on('connection', (ws) => {
+      ws.close(expectedCode, expectedReason);
+    });
+
+    setup.client.onclose = (e) => {
+      t.is(e.code, expectedCode);
+      t.is(e.reason, expectedReason);
+      t.end();
     };
   });
 });

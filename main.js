@@ -79,9 +79,9 @@ class WebSocket {
     this.onMessageCallbackInternal({data: msg});
   }
 
-  onCloseCallback() {
+  onCloseCallback(code, reason) {
     this.readyState = WebSocket.CLOSED;
-    this.onCloseCallbackInternal();
+    this.onCloseCallbackInternal({code: code, reason: reason});
   }
 
   onErrorCallback() {
