@@ -27,6 +27,9 @@ const fs = require('fs');
 const getPort = require('get-port');
 const WebSocketServer = require('ws').Server;
 const promisifyListen = require('@sane/promisify-listen').promisifyListen;
+const SegfaultHandler = require('segfault-handler');
+
+SegfaultHandler.registerHandler('crash.log');
 
 function initNonTlsCommunication() {
   return getPort().then((port) => {
