@@ -29,7 +29,7 @@
     "install": "napa && node-gyp rebuild",
     "format": "gulp format",
     "gen-test-certs": "gulp gen-test-certs",
-    "test": "ava -s",
+    "test": "ava -s 'test/js/*.test.js'",
     "rebuild-tests": "node-gyp rebuild --directory test"
   }
 }
