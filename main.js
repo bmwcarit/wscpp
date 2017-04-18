@@ -92,12 +92,18 @@ class WebSocket {
    * @todo in order to fully comply with "ws" API, we would need to support
    * callbacks
    */
-  send(message) {
+  send(message, options = {}) {
     if (typeof message === 'number') {
       message = message.toString();
     }
 
-    const isBinary = typeof message !== 'string';
+    var isBinary = true;
+
+    if (options.binary !== undefined) {
+      isBinary = options.binary;
+    } else {
+      isBinary = typeof message !== 'string';
+    }
 
     if (!Buffer.isBuffer(message)) {
       message = Buffer.from(message);
