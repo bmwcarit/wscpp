@@ -44,10 +44,12 @@ namespace events
 struct Open {
 };
 struct Close {
-  std::uint16_t code;
+  int code;
   std::string reason;
 };
 struct Error {
+  int code;
+  std::string reason;
 };
 } // namespace events
 
@@ -88,7 +90,9 @@ private:
 
     void operator()(const events::Error& e) const
     {
-      worker->parameters->onErrorCallback->Call(context, 0, nullptr);
+      v8::Local<v8::Value> argv[] = {Nan::New<v8::Int32>(e.code),
+                                     Nan::New<v8::String>(e.reason).ToLocalChecked()};
+      worker->parameters->onErrorCallback->Call(context, 2, argv);
     }
 
   private:
@@ -301,9 +305,9 @@ private:
 
   void connectionFailed(ConnectionHandle connectionHandle)
   {
-    std::ignore = connectionHandle;
-    // TODO add error description to event
-    signalEventOccurred(events::Error());
+    auto connection = endpoint.get_con_from_hdl(connectionHandle);
+    auto errorCode = connection->get_ec();
+    signalEventOccurred(events::Error{errorCode.value(), errorCode.message()});
   }
 
   /**

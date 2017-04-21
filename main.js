@@ -84,8 +84,10 @@ class WebSocket {
     this.onCloseCallbackInternal({code: code, reason: reason});
   }
 
-  onErrorCallback() {
-    this.onErrorCallbackInternal();
+  onErrorCallback(code, reason) {
+    const event = {code: code, reason: reason};
+    this.onErrorCallbackInternal(event);
+    this.onCloseCallback(event);
   }
 
   /**
