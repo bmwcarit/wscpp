@@ -224,16 +224,15 @@ public:
         v8::Local<v8::Value> argv[] = {Nan::New<v8::String>(msg->get_payload()).ToLocalChecked()};
         parameters->onMessageCallback->Call(context, 1, argv);
       } else if (opcode == websocketpp::frame::opcode::binary) {
-        // TODO potentially one copy could be avoided here
-        // this requires that websocketpp provides the possibility to move out
-        // the payload from websocketpp::message_buffer
-        // OR the shared_ptr is kept alive as long as the node::Buffer lives
-        // char* rawData = const_cast<char*>(msg->get_payload().data());
-        // v8::Local<v8::Value> argv[] = {
-        //        Nan::NewBuffer(rawData,
-        //        msg->get_payload().size()).ToLocalChecked()};
-        v8::Local<v8::Value> argv[] = {
-            Nan::CopyBuffer(msg->get_payload().data(), msg->get_payload().size()).ToLocalChecked()};
+        // move payload into a heap allocated string
+        // node Buffer wraps around that string's data
+        // this string will be deleted when the node Buffer goes out of scope
+        auto* payload = new std::string(std::move(msg->get_raw_payload()));
+        auto buffer = Nan::NewBuffer(const_cast<char*>(payload->data()), payload->size(),
+                                     bufferFreeCallback<std::string>, payload)
+                          .ToLocalChecked();
+
+        v8::Local<v8::Value> argv[] = {std::move(buffer)};
         parameters->onMessageCallback->Call(context, 1, argv);
       } else {
         // TODO error handling?
@@ -322,6 +321,12 @@ private:
   {
     eventQueue.enqueue(std::move(event));
     uv_async_send(eventAsyncHandle);
+  }
+
+  template <typename T>
+  static void bufferFreeCallback(char* data, void* hint)
+  {
+    delete reinterpret_cast<T*>(hint);
   }
 
   uv_work_t work;
