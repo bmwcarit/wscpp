@@ -21,20 +21,23 @@
 
 function noop() {}
 
-var NativeWebSocket = require('bindings')('wscpp-client.node');
+var NativeWebSocket;
+try {
+    NativeWebSocket = require('wscpp-client.node');
+} catch (err) {
+    NativeWebSocket = require('bindings')('wscpp-client.node');
+};
 
 class WebSocket {
-  constructor(serverUri, options) {
+  constructor(serverUri, options = {}) {
     if (typeof serverUri !== 'string') {
-      throw 'serverUri must be a string';
+      throw new Error('serverUri must be a string');
     }
-    if (typeof options !== 'undefined') {
-      if (options === null || typeof options !== 'object') {
-        throw 'options must be an object';
-      }
-      if (options.ca !== 'undefined' && !(options.ca instanceof Array)) {
-        options.ca = [options.ca];
-      }
+    if (options === null || typeof options !== 'object') {
+      throw new Error('options must be an object');
+    }
+    if (options.ca !== undefined && !(options.ca instanceof Array)) {
+      options.ca = [options.ca];
     }
     this.onOpenCallbackInternal = noop;
     this.onMessageCallbackInternal = noop;
@@ -42,31 +45,32 @@ class WebSocket {
     this.onErrorCallbackInternal = noop;
 
     this.readyState = WebSocket.CONNECTING;
-    this.nativeHandle = new NativeWebSocket.WebsocketClientWorker(serverUri, this, options || {});
+    this.nativeHandle = new NativeWebSocket.WebsocketClientWorker(serverUri, this, options);
   }
 
-  set onopen(f) {
-    this.onOpenCallbackInternal = f ? f : noop;
+  set onopen(f = noop) {
+    this.onOpenCallbackInternal = f;
   }
 
-  set onmessage(f) {
-    this.onMessageCallbackInternal = f ? f : noop;
+  set onmessage(f = noop) {
+    this.onMessageCallbackInternal = f;
   }
 
-  set onclose(f) {
-    this.onCloseCallbackInternal = f ? f : noop;
+  set onclose(f = noop) {
+    this.onCloseCallbackInternal = f;
   }
 
-  set onerror(f) {
-    this.onErrorCallbackInternal = f ? f : noop;
+  set onerror(f = noop) {
+    this.onErrorCallbackInternal = f;
   }
 
-  /**
-   * @todo in order to fully comply with "ws" API, we would need to support
-   * the "code" and "data" arguments
-   */
-  close(/*code, data*/) {
-    this.nativeHandle.close();
+
+  close(code = 1000, reason = '') {
+    if (typeof code !== 'number') {
+      throw new Error('close must be called with a valid `close` code');
+    }
+
+    this.nativeHandle.close(code, reason);
     this.nativeHandle = null;
     this.readyState = WebSocket.CLOSING;
   }
@@ -77,28 +81,36 @@ class WebSocket {
   }
 
   onMessageCallback(msg) {
-    this.onMessageCallbackInternal({'data': msg});
+    this.onMessageCallbackInternal({data: msg});
   }
 
-  onCloseCallback() {
+  onCloseCallback(code, reason) {
     this.readyState = WebSocket.CLOSED;
-    this.onCloseCallbackInternal();
+    this.onCloseCallbackInternal({code: code, reason: reason});
   }
 
-  onErrorCallback() {
-    this.onErrorCallbackInternal();
+  onErrorCallback(code, reason) {
+    const event = {code: code, reason: reason};
+    this.onErrorCallbackInternal(event);
+    this.onCloseCallback(event);
   }
 
   /**
    * @todo in order to fully comply with "ws" API, we would need to support
    * callbacks
    */
-  send(message) {
+  send(message, options = {}) {
     if (typeof message === 'number') {
       message = message.toString();
     }
 
-    const isBinary = typeof message !== 'string';
+    var isBinary = true;
+
+    if (options.binary !== undefined) {
+      isBinary = options.binary;
+    } else {
+      isBinary = typeof message !== 'string';
+    }
 
     if (!Buffer.isBuffer(message)) {
       message = Buffer.from(message);

@@ -1,6 +1,6 @@
 {
   "name": "wscpp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Node.js native websocket addon",
   "license": "Apache-2.0",
   "repository": "bmwcarit/wscpp",
@@ -19,6 +19,7 @@
     "nan": "2.5.1",
     "napa": "2.3.0",
     "node-gyp": "3.6.0",
+    "segfault-handler": "1.0.0",
     "ws": "2.2.2"
   },
   "napa": {
@@ -29,7 +30,7 @@
     "install": "napa && node-gyp rebuild",
     "format": "gulp format",
     "gen-test-certs": "gulp gen-test-certs",
-    "test": "ava -s",
+    "test": "ava -s 'test/js/*.test.js'",
     "rebuild-tests": "node-gyp rebuild --directory test"
   }
 }

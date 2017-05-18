@@ -17,102 +17,41 @@
  * #L%
  */
 
-import test from 'ava';
-
 'use strict';
 
-const WebSocket = require('../..');
+import test from 'ava';
 
-const http = require('http');
-const https = require('https');
-
-const fs = require('fs');
-const crypto = require('crypto');
-
-const getPort = require('get-port');
-const WebSocketServer = require('ws').Server;
 const cartesianProduct = require('cartesian-product');
-import { promisifyListen } from '@sane/promisify-listen';
-
-function initWebsocket(websocketServerUrl, t, options) {
-  const client = new WebSocket(websocketServerUrl, options);
-
-  client.onerror = () => {
-    t.fail("onerror callback invoked");
-  };
-
-  client.onclose = () => {
-    t.end();
-  };
-  return client;
-};
-
-function initEchoServer(server) {
-  server.on('connection', (ws) => {
-    ws.on('message', (message) => {
-      ws.send(message);
-    });
-  });
-}
-
-function initNonTlsCommunication(t) {
-  return getPort().then((port) => {
-    const httpServer = http.createServer();
-
-    return promisifyListen(httpServer).listenAsync(port).then( () => {
-      const setup = {};
-
-      setup.server = new WebSocketServer({server: httpServer});
-      initEchoServer(setup.server);
-
-      const websocketServerUrl = 'ws://localhost:' + port;
-      setup.client = initWebsocket(websocketServerUrl, t);
-
-      return setup;
-    });
-
-  });
-}
-
-function initTlsCommunication(t) {
-  return getPort().then((port) => {
-
-    const serverOptions = {
-      cert: fs.readFileSync('test/certificates/generated/server1.cert.pem'),
-      key: fs.readFileSync('test/certificates/generated/server1.key.pem'),
-      ca: fs.readFileSync('test/certificates/generated/ca1.cert.pem')
-    };
-    const httpsServer = https.createServer(serverOptions);
-    return promisifyListen(httpsServer).listenAsync(port).then( () => {
-      const setup = {};
-      setup.server = new WebSocketServer({server: httpsServer});
-      initEchoServer(setup.server);
-
-      const clientOptions = {
-        rejectUnauthorized: true,
-        cert: fs.readFileSync('test/certificates/generated/client1.cert.pem'),
-        key: fs.readFileSync('test/certificates/generated/client1.key.pem'),
-        ca: fs.readFileSync('test/certificates/generated/ca1.cert.pem')
-      };
-
-      const websocketServerUrl = 'wss://localhost:' + port;
-      setup.client = initWebsocket(websocketServerUrl, t, clientOptions);
-      return setup;
-    });
-  });
-}
+const Setup = require('./setup.helper.js');
 
 function runEchoTest(config) {
-  const testName = 'message is sent to server and received again; connection: ' + config[0].name +
-      ', datatype: ' + typeof config[1];
+  const setup = config[0];
+  const message = config[1];
+
+  const testName = 'message is sent to server and received again; connection: ' + setup.name +
+      ', datatype: ' + typeof message;
   test.cb(testName, t => {
-    config[0].init(t).then((setup) => {
+    setup.init().then((setup) => {
+
+      setup.server.on('connection', (ws) => {
+        ws.on('message', (message) => {
+          ws.send(message);
+        });
+      });
+
+      setup.client.onerror = () => {
+        t.fail('onerror callback invoked');
+      };
+      setup.client.onclose = () => {
+        t.end();
+      };
+
       setup.client.onopen = () => {
         setup.client.send(config[1]);
       };
 
       setup.client.onmessage = (msg) => {
-        t.deepEqual(msg.data, config[1]);
+        t.deepEqual(msg.data, message);
         setup.client.close();
       }
     });
@@ -139,9 +78,15 @@ const preprocessedInput = inputList.map((input) => {
 });
 const messages = flattenArray(preprocessedInput);
 
+function initTlsCommunication() {
+  const serverSuffix = '1';
+  const clientSuffix = '1';
+  return Setup.initTlsCommunication(serverSuffix, clientSuffix);
+}
+
 const nonTlsConfig = {
   name: 'non TLS',
-  init: initNonTlsCommunication
+  init: Setup.initNonTlsCommunication
 };
 const tlsConfig = {
   name: 'TLS',

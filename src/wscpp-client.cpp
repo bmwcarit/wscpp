@@ -24,6 +24,7 @@
 #include "IWebsocketClientWorker.h"
 #include "WebsocketClientWorker.h"
 #include "WebsocketClientWorkerTls.h"
+#include "marshalling.h"
 
 namespace wscpp
 {
@@ -106,8 +107,20 @@ private:
 
   static NAN_METHOD(close)
   {
+    if (info.Length() != 2) {
+      return Nan::ThrowError("Invalid number of arguments");
+    }
+    std::uint16_t code = 1000;
+    std::string reason;
+
+    using marshalling::convertFromV8;
+    using marshalling::maybeToOptionalValue;
+
+    convertFromV8(maybeToOptionalValue(info[0]), code);
+    convertFromV8(maybeToOptionalValue(info[1]), reason);
+
     auto wrapper = Nan::ObjectWrap::Unwrap<WebsocketClientWrapper>(info.Holder());
-    wrapper->worker->close();
+    wrapper->worker->close(code, reason);
   }
 
   static inline Nan::Persistent<v8::Function>& constructor()
