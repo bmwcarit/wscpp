@@ -16,7 +16,7 @@ under the License.
 
 This project has the following dependencies:
 
-└─ wscpp (0.2.0) ── Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0, http://www.opensource.org/licenses/Apache-2.0) ── package.json
+└─ wscpp (0.2.1) ── Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0, http://www.opensource.org/licenses/Apache-2.0) ── package.json
    ├─ bindings (1.2.1) ── MIT License (http://www.opensource.org/licenses/MIT) ── node_modules/bindings/package.json
    └─ napa (2.3.0) ── MIT License (http://www.opensource.org/licenses/MIT) ── node_modules/napa/package.json
       ├─ download (4.4.3) ── MIT License (http://www.opensource.org/licenses/MIT) ── node_modules/download/package.json
