@@ -1,3 +1,7 @@
+# wscpp 0.2.3
+
+Bumped version as there was a problem publishing 0.2.2 to npmjs.
+
 # wscpp 0.2.2
 
 Moved nan dependency from dev to regular in package.json.
