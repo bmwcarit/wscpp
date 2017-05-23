@@ -1,3 +1,7 @@
+# wscpp 0.2.2
+
+Moved nan dependency from dev to regular in package.json.
+
 # wscpp 0.2.1
 
 Moved napa dependency from dev to regular in package.json.
