@@ -18,6 +18,7 @@ This project has the following dependencies:
 
 └─ wscpp (0.2.1) ── Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0, http://www.opensource.org/licenses/Apache-2.0) ── package.json
    ├─ bindings (1.2.1) ── MIT License (http://www.opensource.org/licenses/MIT) ── node_modules/bindings/package.json
+   ├─ nan (2.5.1) ── MIT License (http://www.opensource.org/licenses/MIT) ── node_modules/nan/package.json
    └─ napa (2.3.0) ── MIT License (http://www.opensource.org/licenses/MIT) ── node_modules/napa/package.json
       ├─ download (4.4.3) ── MIT License (http://www.opensource.org/licenses/MIT) ── node_modules/download/package.json
       │  ├─ caw (1.2.0) ── MIT License (http://www.opensource.org/licenses/MIT) ── node_modules/caw/package.json
@@ -263,7 +264,7 @@ This project has the following dependencies:
       │     ├─ lodash.padend (4.6.1) ── MIT License (http://www.opensource.org/licenses/MIT) ── node_modules/lodash.padend/package.json
       │     └─ lodash.padstart (4.6.1) ── MIT License (http://www.opensource.org/licenses/MIT) ── node_modules/lodash.padstart/package.json
       ├─ rimraf (2.6.1) ── ISC License (http://www.isc.org/software/license, http://www.opensource.org/licenses/ISC) ── node_modules/rimraf/package.json
-      │  └─ glob (7.1.1) ── ISC License (http://www.isc.org/software/license, http://www.opensource.org/licenses/ISC) ── node_modules/rimraf ~ glob/package.json
+      │  └─ glob (7.1.2) ── ISC License (http://www.isc.org/software/license, http://www.opensource.org/licenses/ISC) ── node_modules/rimraf ~ glob/package.json
       │     └─ fs.realpath (1.0.0) ── ISC License (http://www.isc.org/software/license, http://www.opensource.org/licenses/ISC) ── node_modules/fs.realpath/package.json
       ├─ tar-pack (3.4.0) ── BSD 2-clause "Simplified" License (http://www.opensource.org/licenses/BSD-2-Clause) ── node_modules/tar-pack/package.json
       │  ├─ debug (2.6.8) ── MIT License (http://www.opensource.org/licenses/MIT) ── node_modules/debug/package.json
