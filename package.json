@@ -23,7 +23,7 @@
     "ws": "2.2.2"
   },
   "napa": {
-    "concurrentqueue": "cameron314/concurrentqueue#c54341183f8674c575913a65ef7c651ecce47243",
+    "concurrentqueue": "cameron314/concurrentqueue#5170da7fd04335da6d4e1d2ed7209a539176e589",
     "websocketpp": "zaphoyd/websocketpp#0.7.0"
   },
   "scripts": {
