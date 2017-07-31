@@ -25,7 +25,7 @@
     "websocketpp": "zaphoyd/websocketpp#0.7.0"
   },
   "scripts": {
-    "preinstall": "npm install napa@3.0.0 node-gyp@3.6.0",
+    "preinstall": "npm install napa@3.0.0 node-gyp@3.6.2",
     "install": "napa && node-gyp rebuild",
     "format": "gulp format",
     "gen-test-certs": "gulp gen-test-certs",
