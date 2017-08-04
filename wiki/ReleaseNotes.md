@@ -1,3 +1,7 @@
+# wscpp 0.2.4
+
+Updated and cleaned up the project's dependencies.
+
 # wscpp 0.2.3
 
 Bumped version as there was a problem publishing 0.2.2 to npmjs.
