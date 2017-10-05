@@ -55,7 +55,7 @@ function readCerts(type, suffix) {
   return certs;
 }
 
-function initTlsCommunication(serverSuffix, clientSuffix) {
+function initTlsCommunicationEncrypted(serverSuffix, clientSuffix) {
   return getPort().then((port) => {
     const serverOptions = readCerts('server', serverSuffix);
     const httpsServer = https.createServer(serverOptions);
@@ -73,7 +73,28 @@ function initTlsCommunication(serverSuffix, clientSuffix) {
   });
 }
 
+function initTlsCommunicationUnencrypted(serverSuffix, clientSuffix) {
+  return getPort().then((port) => {
+    const serverOptions = readCerts('server', serverSuffix);
+    serverOptions.ciphers = 'eNULL';
+    const httpsServer = https.createServer(serverOptions);
+
+    return promisifyListen(httpsServer).listenAsync(port).then(() => {
+      const setup = {};
+      setup.server = new WebSocketServer({server: httpsServer});
+
+      const clientOptions = readCerts('client', clientSuffix);
+      clientOptions.rejectUnauthorized = true;
+      clientOptions.useUnencryptedTls = true;
+      const websocketServerUrl = 'wss://localhost:' + port;
+      setup.client = new WebSocket(websocketServerUrl, clientOptions);
+      return setup;
+    });
+  });
+}
+
 module.exports = {
   initNonTlsCommunication,
-  initTlsCommunication
+  initTlsCommunicationEncrypted,
+  initTlsCommunicationUnencrypted
 };

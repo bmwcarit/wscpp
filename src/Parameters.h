@@ -38,6 +38,9 @@ struct Parameters {
     // Verify the server certificate?
     boost::optional<bool> rejectUnauthorized;
 
+    // Set communication to unencrypted
+    boost::optional<bool> useUnencryptedTls;
+
     // Trusted certificates
     boost::optional<std::vector<std::string>> ca;
 
@@ -78,6 +81,8 @@ struct Parameters {
           v8::Local<v8::Object> options = info[2].As<v8::Object>();
           convertFromV8(getOptionalMemberValue(options, "rejectUnauthorized"),
                         tls.rejectUnauthorized);
+          convertFromV8(getOptionalMemberValue(options, "useUnencryptedTls"),
+                        tls.useUnencryptedTls);
           convertFromV8(getOptionalMemberValue(options, "cert"), tls.cert);
           convertFromV8(getOptionalMemberValue(options, "key"), tls.key);
           convertFromV8(getOptionalMemberValue(options, "ca"), tls.ca);
