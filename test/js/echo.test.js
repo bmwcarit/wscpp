@@ -39,8 +39,8 @@ function runEchoTest(config) {
         });
       });
 
-      setup.client.onerror = () => {
-        t.fail('onerror callback invoked');
+      setup.client.onerror = (e) => {
+        t.fail('onerror callback invoked with ' + JSON.stringify(e));
       };
       setup.client.onclose = () => {
         t.end();
