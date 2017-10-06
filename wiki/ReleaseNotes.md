@@ -1,3 +1,7 @@
+# wscpp 0.2.5
+
+Added flag `useUnencryptedTls` to optionally set a TLS connection to unencrypted
+
 # wscpp 0.2.4
 
 Updated and cleaned up the project's dependencies.
