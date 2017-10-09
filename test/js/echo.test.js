@@ -39,8 +39,8 @@ function runEchoTest(config) {
         });
       });
 
-      setup.client.onerror = () => {
-        t.fail('onerror callback invoked');
+      setup.client.onerror = (e) => {
+        t.fail('onerror callback invoked with ' + JSON.stringify(e));
       };
       setup.client.onclose = () => {
         t.end();
@@ -78,22 +78,32 @@ const preprocessedInput = inputList.map((input) => {
 });
 const messages = flattenArray(preprocessedInput);
 
-function initTlsCommunication() {
+function initTlsCommunicationEncrypted() {
   const serverSuffix = '1';
   const clientSuffix = '1';
-  return Setup.initTlsCommunication(serverSuffix, clientSuffix);
+  return Setup.initTlsCommunicationEncrypted(serverSuffix, clientSuffix);
+}
+
+function initTlsCommunicationUnencrypted() {
+  const serverSuffix = '1';
+  const clientSuffix = '1';
+  return Setup.initTlsCommunicationUnencrypted(serverSuffix, clientSuffix);
 }
 
 const nonTlsConfig = {
   name: 'non TLS',
   init: Setup.initNonTlsCommunication
 };
-const tlsConfig = {
-  name: 'TLS',
-  init: initTlsCommunication
+const tlsConfigEncrypted = {
+  name: 'TLSEncrypted',
+  init: initTlsCommunicationEncrypted
+};
+const tlsConfigUnencrypted = {
+  name: 'TLSUnencrypted',
+  init: initTlsCommunicationUnencrypted
 };
 
-const configs = [nonTlsConfig, tlsConfig];
+const configs = [nonTlsConfig, tlsConfigEncrypted, tlsConfigUnencrypted];
 const allTestCases = cartesianProduct([configs, messages]);
 
 allTestCases.forEach(testCase => runEchoTest(testCase));

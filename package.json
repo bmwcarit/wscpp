@@ -1,6 +1,6 @@
 {
   "name": "wscpp",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Node.js native websocket addon",
   "license": "Apache-2.0",
   "repository": "bmwcarit/wscpp",

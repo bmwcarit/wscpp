@@ -68,6 +68,10 @@ public:
       sslContext->set_options(parameters->tls.secureOptions.get());
     }
 
+    if (parameters->tls.useUnencryptedTls && parameters->tls.useUnencryptedTls.get()) {
+      SSL_CTX_set_cipher_list(sslContext->native_handle(), "eNULL");
+    }
+
     return sslContext;
   }
 };
