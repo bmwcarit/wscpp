@@ -87,6 +87,12 @@ struct Parameters {
           convertFromV8(getOptionalMemberValue(options, "key"), tls.key);
           convertFromV8(getOptionalMemberValue(options, "ca"), tls.ca);
           convertFromV8(getOptionalMemberValue(options, "secureOptions"), tls.secureOptions);
+          if (serverUri->get_secure()) {
+            if (!tls.cert || !tls.key) {
+              throw std::invalid_argument(
+                  "a secure server URI was configured, hence both cert and key are required");
+            }
+          }
           if (tls.rejectUnauthorized && tls.rejectUnauthorized.get() && !tls.ca) {
             throw std::invalid_argument("need CA for server certificate verification");
           }

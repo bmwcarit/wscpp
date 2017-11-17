@@ -40,3 +40,32 @@ test.cb('connect to non existing server invokes onerror callback', t => {
     t.false(e.reason === undefined);
   };
 });
+
+function runInvalidTlsConfigTest(options) {
+  test('connect to wss server with invalid TLS configuration throws', t => {
+    t.throws(() => {
+      const wssServer = 'wss://localhost:12345';
+      const client = new WebSocket(wssServer, options);
+    }, Error);
+  });
+}
+
+const missingCert = {
+  key: 'key'
+};
+
+const missingKey = {
+  cert: 'cert'
+};
+
+const missingCertAndKey = {};
+
+const missingCa = {
+  key: 'key',
+  cert: 'cert',
+  rejectUnauthorized: true
+}
+
+const invalidTlsConfigs = [missingCert, missingKey, missingCertAndKey, missingCa];
+
+invalidTlsConfigs.forEach(config => runInvalidTlsConfigTest(config));
