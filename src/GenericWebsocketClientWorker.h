@@ -34,6 +34,7 @@
 #include <websocketpp/config/asio.hpp>
 
 #include "IWebsocketClientWorker.h"
+#include "Logger.h"
 #include "Parameters.h"
 
 namespace wscpp
@@ -51,6 +52,10 @@ struct Error {
   int code;
   std::string reason;
 };
+struct Log {
+  websocketpp::log::level level;
+  std::string msg;
+};
 } // namespace events
 
 /**
@@ -64,7 +69,7 @@ template <typename Config>
 class GenericWebsocketClientWorker : public IWebsocketClientWorker
 {
 private:
-  using Event = boost::variant<events::Open, events::Close, events::Error>;
+  using Event = boost::variant<events::Open, events::Close, events::Error, events::Log>;
   using Endpoint = websocketpp::client<Config>;
   using MessagePtr = typename Config::message_type::ptr;
 
@@ -93,6 +98,13 @@ private:
       v8::Local<v8::Value> argv[] = {Nan::New<v8::Int32>(e.code),
                                      Nan::New<v8::String>(e.reason).ToLocalChecked()};
       worker->parameters->onErrorCallback->Call(context, 2, argv);
+    }
+
+    void operator()(const events::Log& e) const
+    {
+      v8::Local<v8::Value> argv[] = {Nan::New<v8::Uint32>(e.level),
+                                     Nan::New<v8::String>(e.msg).ToLocalChecked()};
+      worker->parameters->onLogCallback->Call(context, 2, argv);
     }
 
   private:
@@ -278,10 +290,14 @@ protected:
 private:
   void initWebsocketPp()
   {
-    endpoint.clear_access_channels(websocketpp::log::alevel::all);
+    using namespace std::placeholders;
+
+    auto callback = bind(&GenericWebsocketClientWorker::log, this, _1, _2);
+    endpoint.get_alog().setCallback(callback);
+    endpoint.get_elog().setCallback(callback);
+
     endpoint.init_asio();
 
-    using namespace std::placeholders;
     endpoint.set_message_handler(
         bind(&GenericWebsocketClientWorker::messageReceived, this, _1, _2));
     endpoint.set_open_handler(bind(&GenericWebsocketClientWorker::connectionOpened, this, _1));
@@ -309,6 +325,10 @@ private:
     signalEventOccurred(events::Error{errorCode.value(), errorCode.message()});
   }
 
+  void log(websocketpp::log::level level, const std::string& msg)
+  {
+    signalEventOccurred(events::Log{level, msg});
+  }
   /**
    * @brief notify node to call `messageReceivedCallback`
    */

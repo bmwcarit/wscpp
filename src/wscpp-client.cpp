@@ -22,6 +22,7 @@
 #include <nan.h>
 
 #include "IWebsocketClientWorker.h"
+#include "Logger.h"
 #include "Parameters.h"
 #include "WebsocketClientWorker.h"
 #include "WebsocketClientWorkerTls.h"
@@ -62,9 +63,17 @@ private:
         auto parameters = std::make_unique<Parameters>(info);
         IWebsocketClientWorker* worker = nullptr;
         if (parameters->serverUri->get_secure()) {
-          worker = new WebsocketClientWorkerTls(std::move(parameters));
+          if (parameters->loggingEnabled) {
+            worker = new WebsocketClientWorkerTls<Logger>(std::move(parameters));
+          } else {
+            worker = new WebsocketClientWorkerTls<NullLogger>(std::move(parameters));
+          }
         } else {
-          worker = new WebsocketClientWorker(std::move(parameters));
+          if (parameters->loggingEnabled) {
+            worker = new WebsocketClientWorker<Logger>(std::move(parameters));
+          } else {
+            worker = new WebsocketClientWorker<NullLogger>(std::move(parameters));
+          }
         }
 
         WebsocketClientWrapper* wrapper = new WebsocketClientWrapper(worker);

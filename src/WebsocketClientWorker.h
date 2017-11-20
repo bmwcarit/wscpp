@@ -20,18 +20,25 @@
 #ifndef WSCPP_WEBSOCKETCLIENTWORKER_H
 #define WSCPP_WEBSOCKETCLIENTWORKER_H
 
+#include "ConfigWithLogger.h"
 #include "GenericWebsocketClientWorker.h"
 
 namespace wscpp
 {
 
-class WebsocketClientWorker : public GenericWebsocketClientWorker<websocketpp::config::asio>
+template <typename Logger>
+using PlainConfigWithLogger =
+    ConfigWithLogger<Logger, websocketpp::transport::asio::basic_socket::endpoint>;
+
+template <typename Logger>
+class WebsocketClientWorker : public GenericWebsocketClientWorker<PlainConfigWithLogger<Logger>>
 {
+  using Base = GenericWebsocketClientWorker<PlainConfigWithLogger<Logger>>;
+
 public:
-  WebsocketClientWorker(std::unique_ptr<Parameters> parameters)
-      : GenericWebsocketClientWorker(std::move(parameters))
+  WebsocketClientWorker(std::unique_ptr<Parameters> parameters) : Base(std::move(parameters))
   {
-    start();
+    this->start();
   }
 };
 

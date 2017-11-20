@@ -20,24 +20,37 @@
 #ifndef WSCPP_WEBSOCKETCLIENTWORKERTLS_H
 #define WSCPP_WEBSOCKETCLIENTWORKERTLS_H
 
+#include <websocketpp/config/asio_client.hpp>
+
+#include "ConfigWithLogger.h"
 #include "GenericWebsocketClientWorker.h"
 
 namespace wscpp
 {
 
-class WebsocketClientWorkerTls : public GenericWebsocketClientWorker<websocketpp::config::asio_tls>
+template <typename Logger>
+using TlsConfigWithLogger =
+    ConfigWithLogger<Logger, websocketpp::transport::asio::tls_socket::endpoint>;
+
+template <typename Logger>
+class WebsocketClientWorkerTls : public GenericWebsocketClientWorker<TlsConfigWithLogger<Logger>>
 {
+  using Base = GenericWebsocketClientWorker<TlsConfigWithLogger<Logger>>;
+
 public:
-  WebsocketClientWorkerTls(std::unique_ptr<Parameters> parameters)
-      : GenericWebsocketClientWorker((std::move(parameters)))
+  using ConnectionHandle = typename Base::ConnectionHandle;
+  WebsocketClientWorkerTls(std::unique_ptr<Parameters> parameters) : Base((std::move(parameters)))
   {
     using namespace std::placeholders;
-    endpoint.set_tls_init_handler(bind(&WebsocketClientWorkerTls::on_tls_init, this, _1));
-    start();
+    this->endpoint.set_tls_init_handler(bind(&WebsocketClientWorkerTls::on_tls_init, this, _1));
+    this->start();
   }
 
   std::shared_ptr<boost::asio::ssl::context> on_tls_init(ConnectionHandle handle)
   {
+    // avoid 'this->parameters' everywhere
+    const auto& parameters = this->parameters;
+
     auto sslContext =
         std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::tlsv12_client);
 

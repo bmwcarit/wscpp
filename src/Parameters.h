@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 
+#include <websocketpp/logger/levels.hpp>
 #include <websocketpp/uri.hpp>
 
 #include "marshalling.h"
@@ -57,7 +58,7 @@ struct Parameters {
 
   Parameters(Nan::NAN_METHOD_ARGS_TYPE info)
       : serverUri(), thisContext(), onOpenCallback(), onMessageCallback(), onCloseCallback(),
-        onErrorCallback(), tls()
+        onErrorCallback(), onLogCallback(), tls(), loggingEnabled(false)
   {
     Nan::HandleScope handleScope;
     if (info.Length() >= 2) {
@@ -77,10 +78,12 @@ struct Parameters {
       convertFromV8(getOptionalMemberValue(context, "onMessageCallback"), onMessageCallback);
       convertFromV8(getOptionalMemberValue(context, "onCloseCallback"), onCloseCallback);
       convertFromV8(getOptionalMemberValue(context, "onErrorCallback"), onErrorCallback);
+      convertFromV8(getOptionalMemberValue(context, "onLogCallback"), onLogCallback);
 
       if (info.Length() == 3) {
         if (info[2]->IsObject()) {
           v8::Local<v8::Object> options = info[2].As<v8::Object>();
+          convertFromV8(getOptionalMemberValue(options, "loggingEnabled"), loggingEnabled);
           convertFromV8(getOptionalMemberValue(options, "rejectUnauthorized"),
                         tls.rejectUnauthorized);
           convertFromV8(getOptionalMemberValue(options, "useUnencryptedTls"),
@@ -116,8 +119,9 @@ struct Parameters {
   std::unique_ptr<Nan::Callback> onMessageCallback;
   std::unique_ptr<Nan::Callback> onCloseCallback;
   std::unique_ptr<Nan::Callback> onErrorCallback;
-
+  std::unique_ptr<Nan::Callback> onLogCallback;
   TLS tls;
+  bool loggingEnabled;
 };
 } // namespace wscpp
 
