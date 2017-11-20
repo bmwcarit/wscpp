@@ -22,21 +22,30 @@
 import test from 'ava';
 const WebSocket = require('../..');
 
-test.cb('connect to non existing server invokes onerror callback', t => {
+function runInvalidTlsConfigTest(options) {
+  test('connect to wss server with invalid TLS configuration throws', t => {
+    t.throws(() => {
+      const wssServer = 'wss://localhost:12345';
+      const client = new WebSocket(wssServer, options);
+    }, Error);
+  });
+}
 
-  const nonExistingServerUrl = 'ws://localhost:12345';
-  const client = new WebSocket(nonExistingServerUrl);
+const missingCert = {
+  key: 'key'
+};
 
-  client.onopen = () => {
-    t.fail('onopen callback should not be invoked');
-  };
+const missingKey = {
+  cert: 'cert'
+};
 
-  client.onclose = () => {
-    t.end();
-  };
+const missingCertAndKey = {};
 
-  client.onerror = (e) => {
-    t.false(e.code === undefined);
-    t.false(e.reason === undefined);
-  };
-});
+const missingCa = {
+  key: 'key',
+  cert: 'cert',
+  rejectUnauthorized: true
+}
+
+const invalidTlsConfigs = [missingCert, missingKey, missingCertAndKey, missingCa];
+invalidTlsConfigs.forEach(config => runInvalidTlsConfigTest(config));
