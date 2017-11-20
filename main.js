@@ -23,9 +23,9 @@ function noop() {}
 
 var NativeWebSocket;
 try {
-    NativeWebSocket = require('wscpp-client.node');
+  NativeWebSocket = require('wscpp-client.node');
 } catch (err) {
-    NativeWebSocket = require('bindings')('wscpp-client.node');
+  NativeWebSocket = require('bindings')('wscpp-client.node');
 };
 
 class WebSocket {
