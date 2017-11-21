@@ -185,10 +185,8 @@ public:
     endpoint.stop_perpetual();
     websocketpp::lib::error_code ec;
     endpoint.close(connectionHandle, code, reason, ec);
-    if (ec) {
-      const std::string errorMessage = "could not close connection: " + ec.message();
-      Nan::ThrowError(errorMessage.c_str());
-    }
+    // ignore any errors that arise during closing the connection
+    std::ignore = ec;
   }
 
   /**
