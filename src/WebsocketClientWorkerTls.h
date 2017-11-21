@@ -43,7 +43,6 @@ public:
   {
     using namespace std::placeholders;
     this->endpoint.set_tls_init_handler(bind(&WebsocketClientWorkerTls::on_tls_init, this, _1));
-    this->start();
   }
 
   std::shared_ptr<boost::asio::ssl::context> on_tls_init(ConnectionHandle handle)

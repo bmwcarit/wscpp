@@ -48,7 +48,9 @@ public:
   }
 
 private:
-  WebsocketClientWrapper(IWebsocketClientWorker* worker) : worker(worker) {}
+  WebsocketClientWrapper(std::shared_ptr<IWebsocketClientWorker> worker) : worker(std::move(worker))
+  {
+  }
 
   ~WebsocketClientWrapper() override = default;
 
@@ -61,18 +63,18 @@ private:
     if (info.IsConstructCall()) {
       try {
         auto parameters = std::make_unique<Parameters>(info);
-        IWebsocketClientWorker* worker = nullptr;
+        std::shared_ptr<IWebsocketClientWorker> worker;
         if (parameters->serverUri->get_secure()) {
           if (parameters->loggingEnabled) {
-            worker = new WebsocketClientWorkerTls<Logger>(std::move(parameters));
+            worker = std::make_shared<WebsocketClientWorkerTls<Logger>>(std::move(parameters));
           } else {
-            worker = new WebsocketClientWorkerTls<NullLogger>(std::move(parameters));
+            worker = std::make_shared<WebsocketClientWorkerTls<NullLogger>>(std::move(parameters));
           }
         } else {
           if (parameters->loggingEnabled) {
-            worker = new WebsocketClientWorker<Logger>(std::move(parameters));
+            worker = std::make_shared<WebsocketClientWorker<Logger>>(std::move(parameters));
           } else {
-            worker = new WebsocketClientWorker<NullLogger>(std::move(parameters));
+            worker = std::make_shared<WebsocketClientWorker<NullLogger>>(std::move(parameters));
           }
         }
 
@@ -80,6 +82,8 @@ private:
 
         wrapper->Wrap(info.This());
         info.GetReturnValue().Set(info.This());
+
+        worker->start();
 
       } catch (const std::exception& e) {
         Nan::ThrowError(e.what());
@@ -139,7 +143,7 @@ private:
     return constructorFunctino;
   }
 
-  IWebsocketClientWorker* worker;
+  std::shared_ptr<IWebsocketClientWorker> worker;
 };
 
 } // namespace wscpp

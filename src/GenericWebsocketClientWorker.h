@@ -58,6 +58,26 @@ struct Log {
 };
 } // namespace events
 
+template <typename Config>
+class GenericWebsocketClientWorker;
+
+template <typename Config>
+class WorkerHolder
+{
+public:
+  WorkerHolder(std::shared_ptr<GenericWebsocketClientWorker<Config>> worker) : worker(worker) {}
+  auto lock() { return worker.lock(); }
+
+private:
+  std::weak_ptr<GenericWebsocketClientWorker<Config>> worker;
+};
+
+template <typename Config>
+auto* makeWorkerHolder(std::shared_ptr<GenericWebsocketClientWorker<Config>> worker)
+{
+  return new WorkerHolder<Config>(worker);
+}
+
 /**
  * This class is modeled after NaN::AsyncWorker and
  * NaN::AsyncProgressWorkerBase.
@@ -66,7 +86,9 @@ struct Log {
  * communication and handles its interaction with the node event loop.
  */
 template <typename Config>
-class GenericWebsocketClientWorker : public IWebsocketClientWorker
+class GenericWebsocketClientWorker
+    : public IWebsocketClientWorker,
+      public std::enable_shared_from_this<GenericWebsocketClientWorker<Config>>
 {
 private:
   using Event = boost::variant<events::Open, events::Close, events::Error, events::Log>;
@@ -120,21 +142,6 @@ public:
       : parameters(std::move(parameters)), endpoint(), work(), messageAsyncHandle(nullptr),
         eventAsyncHandle(nullptr), connectionHandle(), receivedMessageQueue(), eventQueue()
   {
-    initLibUv();
-    initWebsocketPp();
-  }
-
-  void initLibUv()
-  {
-    work.data = this;
-
-    messageAsyncHandle = new uv_async_t();
-    uv_async_init(uv_default_loop(), messageAsyncHandle, messageReceivedCallback);
-    messageAsyncHandle->data = this;
-
-    eventAsyncHandle = new uv_async_t();
-    uv_async_init(uv_default_loop(), eventAsyncHandle, eventOccuredCallback);
-    eventAsyncHandle->data = this;
   }
 
   ~GenericWebsocketClientWorker() override = default;
@@ -143,17 +150,22 @@ public:
 
   static void asyncExecute(uv_work_t* req)
   {
-    GenericWebsocketClientWorker* worker = static_cast<GenericWebsocketClientWorker*>(req->data);
-    worker->runEventLoop();
+    auto* workerHolder = getWorkerHolder(req->data);
+    if (auto worker = workerHolder->lock()) {
+      worker->runEventLoop();
+    }
   }
 
   static void asyncExecuteComplete(uv_work_t* req)
   {
-    GenericWebsocketClientWorker* worker = static_cast<GenericWebsocketClientWorker*>(req->data);
-    worker->handReceivedMessagesToNode();
-    worker->handReceivedEventsToNode();
-    uv_close(reinterpret_cast<uv_handle_t*>(worker->messageAsyncHandle), asyncCloseMessageHandle);
-    uv_close(reinterpret_cast<uv_handle_t*>(worker->eventAsyncHandle), asyncCloseEventHandle);
+    auto* workerHolder = getWorkerHolder(req->data);
+    if (auto worker = workerHolder->lock()) {
+      worker->handReceivedMessagesToNode();
+      worker->handReceivedEventsToNode();
+      uv_close(reinterpret_cast<uv_handle_t*>(worker->eventAsyncHandle), asyncCloseEventHandle);
+      uv_close(reinterpret_cast<uv_handle_t*>(worker->messageAsyncHandle), asyncCloseMessageHandle);
+    }
+    delete workerHolder;
   }
 
   void sendTextMessage(const char* data, std::size_t size) override
@@ -195,8 +207,10 @@ public:
    */
   static NAUV_WORK_CB(messageReceivedCallback)
   {
-    auto worker = static_cast<GenericWebsocketClientWorker*>(async->data);
-    worker->handReceivedMessagesToNode();
+    auto* workerHolder = getWorkerHolder(async->data);
+    if (auto worker = workerHolder->lock()) {
+      worker->handReceivedMessagesToNode();
+    }
   }
 
   /**
@@ -204,20 +218,24 @@ public:
    */
   static NAUV_WORK_CB(eventOccuredCallback)
   {
-    auto worker = static_cast<GenericWebsocketClientWorker*>(async->data);
-    worker->handReceivedEventsToNode();
+    auto* workerHolder = getWorkerHolder(async->data);
+    if (auto worker = workerHolder->lock()) {
+      worker->handReceivedEventsToNode();
+    }
   }
 
   inline static void asyncCloseMessageHandle(uv_handle_t* handle)
   {
-    auto worker = static_cast<GenericWebsocketClientWorker*>(handle->data);
+    auto* workerHolder = getWorkerHolder(handle->data);
     delete reinterpret_cast<uv_async_t*>(handle);
-    delete worker;
+    delete workerHolder;
   }
 
   inline static void asyncCloseEventHandle(uv_handle_t* handle)
   {
+    auto* workerHolder = getWorkerHolder(handle->data);
     delete reinterpret_cast<uv_async_t*>(handle);
+    delete workerHolder;
   }
 
   /**
@@ -263,15 +281,17 @@ public:
     }
   }
 
-protected:
   /**
    * @brief start worker asynchronously
    *
    * This will run `asyncExecute` in libuv's thread pool, after that,
    *`asyncExecuteComplete` is called.
    */
-  void start()
+  void start() override
   {
+    initLibUv();
+    initWebsocketPp();
+
     websocketpp::lib::error_code ec;
     typename Endpoint::connection_ptr con = endpoint.get_connection(parameters->serverUri, ec);
     if (ec) {
@@ -280,7 +300,7 @@ protected:
 
     endpoint.connect(con);
 
-    uv_queue_work(uv_default_loop(), &work, asyncExecute,
+    uv_queue_work(uv_default_loop(), work, asyncExecute,
                   reinterpret_cast<uv_after_work_cb>(asyncExecuteComplete));
   }
 
@@ -288,6 +308,21 @@ protected:
   Endpoint endpoint;
 
 private:
+  void initLibUv()
+  {
+    auto thisSharedPtr = this->shared_from_this();
+    work = new uv_work_t();
+    work->data = makeWorkerHolder(thisSharedPtr);
+
+    messageAsyncHandle = new uv_async_t();
+    uv_async_init(uv_default_loop(), messageAsyncHandle, messageReceivedCallback);
+    messageAsyncHandle->data = makeWorkerHolder(thisSharedPtr);
+
+    eventAsyncHandle = new uv_async_t();
+    uv_async_init(uv_default_loop(), eventAsyncHandle, eventOccuredCallback);
+    eventAsyncHandle->data = makeWorkerHolder(thisSharedPtr);
+  }
+
   void initWebsocketPp()
   {
     using namespace std::placeholders;
@@ -332,15 +367,18 @@ private:
   /**
    * @brief notify node to call `messageReceivedCallback`
    */
-  void signalMessageReceivedToJS() const { uv_async_send(messageAsyncHandle); }
+  void signalMessageReceivedToJS() const
+  {
+    uv_async_send(messageAsyncHandle);
+  }
 
   /**
    * @brief notify node to call `eventOccuredCallback`
    */
   void signalEventOccurred(Event event)
   {
-    eventQueue.enqueue(std::move(event));
-    uv_async_send(eventAsyncHandle);
+      eventQueue.enqueue(std::move(event));
+      uv_async_send(eventAsyncHandle);
   }
 
   template <typename T>
@@ -349,7 +387,12 @@ private:
     delete reinterpret_cast<T*>(hint);
   }
 
-  uv_work_t work;
+  static WorkerHolder<Config>* getWorkerHolder(void* holder)
+  {
+    return static_cast<WorkerHolder<Config>*>(holder);
+  }
+
+  uv_work_t* work;
   uv_async_t* messageAsyncHandle;
   uv_async_t* eventAsyncHandle;
 

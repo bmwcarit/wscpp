@@ -36,10 +36,7 @@ class WebsocketClientWorker : public GenericWebsocketClientWorker<PlainConfigWit
   using Base = GenericWebsocketClientWorker<PlainConfigWithLogger<Logger>>;
 
 public:
-  WebsocketClientWorker(std::unique_ptr<Parameters> parameters) : Base(std::move(parameters))
-  {
-    this->start();
-  }
+  WebsocketClientWorker(std::unique_ptr<Parameters> parameters) : Base(std::move(parameters)) {}
 };
 
 } // namespace wscpp
