@@ -52,7 +52,12 @@ private:
   {
   }
 
-  ~WebsocketClientWrapper() override = default;
+  ~WebsocketClientWrapper() override
+  {
+    const std::uint16_t goingAwayCode = 1001;
+    const std::string emptyReason = "";
+    worker->close(goingAwayCode, emptyReason);
+  }
 
   static NAN_METHOD(New)
   {
