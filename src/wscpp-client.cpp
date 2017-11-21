@@ -22,6 +22,7 @@
 #include <nan.h>
 
 #include "IWebsocketClientWorker.h"
+#include "Parameters.h"
 #include "WebsocketClientWorker.h"
 #include "WebsocketClientWorkerTls.h"
 #include "marshalling.h"
