@@ -56,6 +56,8 @@ struct Parameters {
   };
 
   Parameters(Nan::NAN_METHOD_ARGS_TYPE info)
+      : serverUri(), thisContext(), onOpenCallback(), onMessageCallback(), onCloseCallback(),
+        onErrorCallback(), tls()
   {
     Nan::HandleScope handleScope;
     if (info.Length() >= 2) {
