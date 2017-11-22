@@ -23,9 +23,9 @@ function noop() {}
 
 var NativeWebSocket;
 try {
-    NativeWebSocket = require('wscpp-client.node');
+  NativeWebSocket = require('wscpp-client.node');
 } catch (err) {
-    NativeWebSocket = require('bindings')('wscpp-client.node');
+  NativeWebSocket = require('bindings')('wscpp-client.node');
 };
 
 class WebSocket {
@@ -43,8 +43,16 @@ class WebSocket {
     this.onMessageCallbackInternal = noop;
     this.onCloseCallbackInternal = noop;
     this.onErrorCallbackInternal = noop;
+    this.onLogCallbackInternal = noop;
 
     this.readyState = WebSocket.CONNECTING;
+    if (options.loggingEnabled !== undefined) {
+      if (typeof (options.loggingEnabled) !== 'boolean') {
+        throw new Error('loggingEnabled must be a boolean');
+      }
+    } else {
+      options.loggingEnabled = false;
+    }
     this.nativeHandle = new NativeWebSocket.WebsocketClientWorker(serverUri, this, options);
   }
 
@@ -64,6 +72,9 @@ class WebSocket {
     this.onErrorCallbackInternal = f;
   }
 
+  set onlog(f = noop) {
+    this.onLogCallbackInternal = f;
+  }
 
   close(code = 1000, reason = '') {
     if (typeof code !== 'number') {
@@ -95,6 +106,10 @@ class WebSocket {
     this.onCloseCallback(event);
   }
 
+  onLogCallback(level, logMsg) {
+    this.onLogCallbackInternal(level, logMsg);
+  }
+
   /**
    * @todo in order to fully comply with "ws" API, we would need to support
    * callbacks
@@ -124,4 +139,5 @@ WebSocket.CONNECTING = 0;
 WebSocket.OPEN = 1;
 WebSocket.CLOSING = 2;
 WebSocket.CLOSED = 3;
+
 module.exports = WebSocket;

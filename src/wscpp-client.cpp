@@ -22,6 +22,8 @@
 #include <nan.h>
 
 #include "IWebsocketClientWorker.h"
+#include "Logger.h"
+#include "Parameters.h"
 #include "WebsocketClientWorker.h"
 #include "WebsocketClientWorkerTls.h"
 #include "marshalling.h"
@@ -46,9 +48,16 @@ public:
   }
 
 private:
-  WebsocketClientWrapper(IWebsocketClientWorker* worker) : worker(worker) {}
+  WebsocketClientWrapper(std::shared_ptr<IWebsocketClientWorker> worker) : worker(std::move(worker))
+  {
+  }
 
-  ~WebsocketClientWrapper() override = default;
+  ~WebsocketClientWrapper() override
+  {
+    const std::uint16_t goingAwayCode = 1001;
+    const std::string emptyReason = "";
+    worker->close(goingAwayCode, emptyReason);
+  }
 
   static NAN_METHOD(New)
   {
@@ -59,17 +68,27 @@ private:
     if (info.IsConstructCall()) {
       try {
         auto parameters = std::make_unique<Parameters>(info);
-        IWebsocketClientWorker* worker = nullptr;
+        std::shared_ptr<IWebsocketClientWorker> worker;
         if (parameters->serverUri->get_secure()) {
-          worker = new WebsocketClientWorkerTls(std::move(parameters));
+          if (parameters->loggingEnabled) {
+            worker = std::make_shared<WebsocketClientWorkerTls<Logger>>(std::move(parameters));
+          } else {
+            worker = std::make_shared<WebsocketClientWorkerTls<NullLogger>>(std::move(parameters));
+          }
         } else {
-          worker = new WebsocketClientWorker(std::move(parameters));
+          if (parameters->loggingEnabled) {
+            worker = std::make_shared<WebsocketClientWorker<Logger>>(std::move(parameters));
+          } else {
+            worker = std::make_shared<WebsocketClientWorker<NullLogger>>(std::move(parameters));
+          }
         }
 
         WebsocketClientWrapper* wrapper = new WebsocketClientWrapper(worker);
 
         wrapper->Wrap(info.This());
         info.GetReturnValue().Set(info.This());
+
+        worker->start();
 
       } catch (const std::exception& e) {
         Nan::ThrowError(e.what());
@@ -129,7 +148,7 @@ private:
     return constructorFunctino;
   }
 
-  IWebsocketClientWorker* worker;
+  std::shared_ptr<IWebsocketClientWorker> worker;
 };
 
 } // namespace wscpp

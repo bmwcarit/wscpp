@@ -1,3 +1,10 @@
+# wscpp 0.2.6
+
+* Allow to call close() when connection not established
+* Fixed lifecycle issue that could cause a crash during shutdown
+* Added option to enable logging of the underlying library
+* Verify that cert and key are specified when connecting to TLS server
+
 # wscpp 0.2.5
 
 Added flag `useUnencryptedTls` to optionally set a TLS connection to unencrypted

@@ -36,6 +36,11 @@ public:
   virtual ~IWebsocketClientWorker() = default;
 
   /**
+   * @brief start the work, init the connection
+   */
+  virtual void start() = 0;
+
+  /**
    * @brief transmit text message via websockets
    * @param data message to be sent, will be interpreted as text
    * @param size size of message to be sent
