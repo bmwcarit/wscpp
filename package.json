@@ -23,7 +23,7 @@
   },
   "napa": {
     "concurrentqueue": "cameron314/concurrentqueue#5170da7fd04335da6d4e1d2ed7209a539176e589",
-    "websocketpp": "zaphoyd/websocketpp#0.7.0"
+    "websocketpp": "zaphoyd/websocketpp#19cad9925f83d15d7487c16f0491f4741ec9f674"
   },
   "scripts": {
     "preinstall": "npm install napa@3.0.0 node-gyp@3.6.2",
