@@ -365,18 +365,15 @@ private:
   /**
    * @brief notify node to call `messageReceivedCallback`
    */
-  void signalMessageReceivedToJS() const
-  {
-    uv_async_send(messageAsyncHandle);
-  }
+  void signalMessageReceivedToJS() const { uv_async_send(messageAsyncHandle); }
 
   /**
    * @brief notify node to call `eventOccuredCallback`
    */
   void signalEventOccurred(Event event)
   {
-      eventQueue.enqueue(std::move(event));
-      uv_async_send(eventAsyncHandle);
+    eventQueue.enqueue(std::move(event));
+    uv_async_send(eventAsyncHandle);
   }
 
   template <typename T>
