@@ -182,7 +182,6 @@ public:
 
   void close(std::uint16_t code, const std::string& reason) override
   {
-    endpoint.stop_perpetual();
     websocketpp::lib::error_code ec;
     endpoint.close(connectionHandle, code, reason, ec);
     // ignore any errors that arise during closing the connection
