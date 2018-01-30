@@ -81,6 +81,10 @@ class WebSocket {
       throw new Error('close must be called with a valid `close` code');
     }
 
+    if (this.nativeHandle === null) {
+      return;
+    }
+
     this.nativeHandle.close(code, reason);
     this.readyState = WebSocket.CLOSING;
   }
@@ -115,6 +119,9 @@ class WebSocket {
    * callbacks
    */
   send(message, options = {}) {
+    if (this.nativeHandle === null) {
+      return;
+    }
     if (typeof message === 'number') {
       message = message.toString();
     }
