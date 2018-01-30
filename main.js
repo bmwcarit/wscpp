@@ -81,8 +81,11 @@ class WebSocket {
       throw new Error('close must be called with a valid `close` code');
     }
 
+    if (this.nativeHandle === null) {
+      return;
+    }
+
     this.nativeHandle.close(code, reason);
-    this.nativeHandle = null;
     this.readyState = WebSocket.CLOSING;
   }
 
@@ -98,12 +101,13 @@ class WebSocket {
   onCloseCallback(code, reason) {
     this.readyState = WebSocket.CLOSED;
     this.onCloseCallbackInternal({code: code, reason: reason});
+    this.nativeHandle = null;
   }
 
   onErrorCallback(code, reason) {
     const event = {code: code, reason: reason};
     this.onErrorCallbackInternal(event);
-    this.onCloseCallback(event);
+    this.onCloseCallback(code, reason);
   }
 
   onLogCallback(level, logMsg) {
@@ -115,6 +119,9 @@ class WebSocket {
    * callbacks
    */
   send(message, options = {}) {
+    if (this.nativeHandle === null) {
+      return;
+    }
     if (typeof message === 'number') {
       message = message.toString();
     }

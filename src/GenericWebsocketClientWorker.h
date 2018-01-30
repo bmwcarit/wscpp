@@ -22,6 +22,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <tuple> // for std::ignore
 
@@ -65,11 +66,14 @@ template <typename Config>
 class WorkerHolder
 {
 public:
-  WorkerHolder(std::shared_ptr<GenericWebsocketClientWorker<Config>> worker) : worker(worker) {}
-  auto lock() { return worker.lock(); }
+  WorkerHolder(std::shared_ptr<GenericWebsocketClientWorker<Config>> worker)
+      : worker(std::move(worker))
+  {
+  }
+  auto get() { return worker; }
 
 private:
-  std::weak_ptr<GenericWebsocketClientWorker<Config>> worker;
+  std::shared_ptr<GenericWebsocketClientWorker<Config>> worker;
 };
 
 template <typename Config>
@@ -140,7 +144,8 @@ protected:
 public:
   GenericWebsocketClientWorker(std::unique_ptr<Parameters> parameters)
       : parameters(std::move(parameters)), endpoint(), work(), messageAsyncHandle(nullptr),
-        eventAsyncHandle(nullptr), connectionHandle(), receivedMessageQueue(), eventQueue()
+        eventAsyncHandle(nullptr), connectionHandle(), receivedMessageQueue(), eventQueue(),
+        closing(false), closingMutex()
   {
   }
 
@@ -151,20 +156,18 @@ public:
   static void asyncExecute(uv_work_t* req)
   {
     auto* workerHolder = getWorkerHolder(req->data);
-    if (auto worker = workerHolder->lock()) {
-      worker->runEventLoop();
-    }
+    auto worker = workerHolder->get();
+    worker->runEventLoop();
   }
 
   static void asyncExecuteComplete(uv_work_t* req)
   {
     auto* workerHolder = getWorkerHolder(req->data);
-    if (auto worker = workerHolder->lock()) {
-      worker->handReceivedMessagesToNode();
-      worker->handReceivedEventsToNode();
-      uv_close(reinterpret_cast<uv_handle_t*>(worker->eventAsyncHandle), asyncCloseEventHandle);
-      uv_close(reinterpret_cast<uv_handle_t*>(worker->messageAsyncHandle), asyncCloseMessageHandle);
-    }
+    auto worker = workerHolder->get();
+    worker->handReceivedMessagesToNode();
+    worker->handReceivedEventsToNode();
+    uv_close(reinterpret_cast<uv_handle_t*>(worker->eventAsyncHandle), asyncCloseEventHandle);
+    uv_close(reinterpret_cast<uv_handle_t*>(worker->messageAsyncHandle), asyncCloseMessageHandle);
     delete workerHolder;
   }
 
@@ -182,7 +185,11 @@ public:
 
   void close(std::uint16_t code, const std::string& reason) override
   {
-    endpoint.stop_perpetual();
+    std::lock_guard<std::mutex> lock(closingMutex);
+    if (closing) {
+      return;
+    }
+    closing = true;
     websocketpp::lib::error_code ec;
     endpoint.close(connectionHandle, code, reason, ec);
     // ignore any errors that arise during closing the connection
@@ -206,9 +213,8 @@ public:
   static NAUV_WORK_CB(messageReceivedCallback)
   {
     auto* workerHolder = getWorkerHolder(async->data);
-    if (auto worker = workerHolder->lock()) {
-      worker->handReceivedMessagesToNode();
-    }
+    auto worker = workerHolder->get();
+    worker->handReceivedMessagesToNode();
   }
 
   /**
@@ -217,9 +223,8 @@ public:
   static NAUV_WORK_CB(eventOccuredCallback)
   {
     auto* workerHolder = getWorkerHolder(async->data);
-    if (auto worker = workerHolder->lock()) {
-      worker->handReceivedEventsToNode();
-    }
+    auto worker = workerHolder->get();
+    worker->handReceivedEventsToNode();
   }
 
   inline static void asyncCloseMessageHandle(uv_handle_t* handle)
@@ -365,18 +370,15 @@ private:
   /**
    * @brief notify node to call `messageReceivedCallback`
    */
-  void signalMessageReceivedToJS() const
-  {
-    uv_async_send(messageAsyncHandle);
-  }
+  void signalMessageReceivedToJS() const { uv_async_send(messageAsyncHandle); }
 
   /**
    * @brief notify node to call `eventOccuredCallback`
    */
   void signalEventOccurred(Event event)
   {
-      eventQueue.enqueue(std::move(event));
-      uv_async_send(eventAsyncHandle);
+    eventQueue.enqueue(std::move(event));
+    uv_async_send(eventAsyncHandle);
   }
 
   template <typename T>
@@ -398,6 +400,8 @@ private:
 
   moodycamel::ConcurrentQueue<MessagePtr> receivedMessageQueue;
   moodycamel::ConcurrentQueue<Event> eventQueue;
+  bool closing;
+  std::mutex closingMutex;
 };
 
 } // namespace wscpp
