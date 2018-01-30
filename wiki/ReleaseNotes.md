@@ -1,3 +1,11 @@
+# wscpp 1.0.0
+
+* Stability improvements
+
+# wscpp 0.2.7
+
+* Updated websocketpp version
+
 # wscpp 0.2.6
 
 * Allow to call close() when connection not established
