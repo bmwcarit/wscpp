@@ -22,6 +22,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <tuple> // for std::ignore
 
@@ -140,7 +141,8 @@ protected:
 public:
   GenericWebsocketClientWorker(std::unique_ptr<Parameters> parameters)
       : parameters(std::move(parameters)), endpoint(), work(), messageAsyncHandle(nullptr),
-        eventAsyncHandle(nullptr), connectionHandle(), receivedMessageQueue(), eventQueue()
+        eventAsyncHandle(nullptr), connectionHandle(), receivedMessageQueue(), eventQueue(),
+        closing(false), closingMutex()
   {
   }
 
@@ -182,6 +184,11 @@ public:
 
   void close(std::uint16_t code, const std::string& reason) override
   {
+    std::lock_guard<std::mutex> lock(closingMutex);
+    if (closing) {
+      return;
+    }
+    closing = true;
     websocketpp::lib::error_code ec;
     endpoint.close(connectionHandle, code, reason, ec);
     // ignore any errors that arise during closing the connection
@@ -394,6 +401,8 @@ private:
 
   moodycamel::ConcurrentQueue<MessagePtr> receivedMessageQueue;
   moodycamel::ConcurrentQueue<Event> eventQueue;
+  bool closing;
+  std::mutex closingMutex;
 };
 
 } // namespace wscpp
