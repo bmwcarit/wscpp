@@ -66,11 +66,14 @@ template <typename Config>
 class WorkerHolder
 {
 public:
-  WorkerHolder(std::shared_ptr<GenericWebsocketClientWorker<Config>> worker) : worker(worker) {}
-  auto lock() { return worker.lock(); }
+  WorkerHolder(std::shared_ptr<GenericWebsocketClientWorker<Config>> worker)
+      : worker(std::move(worker))
+  {
+  }
+  auto get() { return worker; }
 
 private:
-  std::weak_ptr<GenericWebsocketClientWorker<Config>> worker;
+  std::shared_ptr<GenericWebsocketClientWorker<Config>> worker;
 };
 
 template <typename Config>
@@ -153,20 +156,18 @@ public:
   static void asyncExecute(uv_work_t* req)
   {
     auto* workerHolder = getWorkerHolder(req->data);
-    if (auto worker = workerHolder->lock()) {
-      worker->runEventLoop();
-    }
+    auto worker = workerHolder->get();
+    worker->runEventLoop();
   }
 
   static void asyncExecuteComplete(uv_work_t* req)
   {
     auto* workerHolder = getWorkerHolder(req->data);
-    if (auto worker = workerHolder->lock()) {
-      worker->handReceivedMessagesToNode();
-      worker->handReceivedEventsToNode();
-      uv_close(reinterpret_cast<uv_handle_t*>(worker->eventAsyncHandle), asyncCloseEventHandle);
-      uv_close(reinterpret_cast<uv_handle_t*>(worker->messageAsyncHandle), asyncCloseMessageHandle);
-    }
+    auto worker = workerHolder->get();
+    worker->handReceivedMessagesToNode();
+    worker->handReceivedEventsToNode();
+    uv_close(reinterpret_cast<uv_handle_t*>(worker->eventAsyncHandle), asyncCloseEventHandle);
+    uv_close(reinterpret_cast<uv_handle_t*>(worker->messageAsyncHandle), asyncCloseMessageHandle);
     delete workerHolder;
   }
 
@@ -212,9 +213,8 @@ public:
   static NAUV_WORK_CB(messageReceivedCallback)
   {
     auto* workerHolder = getWorkerHolder(async->data);
-    if (auto worker = workerHolder->lock()) {
-      worker->handReceivedMessagesToNode();
-    }
+    auto worker = workerHolder->get();
+    worker->handReceivedMessagesToNode();
   }
 
   /**
@@ -223,9 +223,8 @@ public:
   static NAUV_WORK_CB(eventOccuredCallback)
   {
     auto* workerHolder = getWorkerHolder(async->data);
-    if (auto worker = workerHolder->lock()) {
-      worker->handReceivedEventsToNode();
-    }
+    auto worker = workerHolder->get();
+    worker->handReceivedEventsToNode();
   }
 
   inline static void asyncCloseMessageHandle(uv_handle_t* handle)
