@@ -103,7 +103,7 @@ class WebSocket {
   onErrorCallback(code, reason) {
     const event = {code: code, reason: reason};
     this.onErrorCallbackInternal(event);
-    this.onCloseCallback(event);
+    this.onCloseCallback(code, reason);
   }
 
   onLogCallback(level, logMsg) {
