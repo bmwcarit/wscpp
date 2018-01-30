@@ -82,7 +82,6 @@ class WebSocket {
     }
 
     this.nativeHandle.close(code, reason);
-    this.nativeHandle = null;
     this.readyState = WebSocket.CLOSING;
   }
 
@@ -98,6 +97,7 @@ class WebSocket {
   onCloseCallback(code, reason) {
     this.readyState = WebSocket.CLOSED;
     this.onCloseCallbackInternal({code: code, reason: reason});
+    this.nativeHandle = null;
   }
 
   onErrorCallback(code, reason) {
